@@ -1,6 +1,7 @@
 from fastai import *
 from fastai.vision import *
 
+
 class VGG(nn.Module):
     def __init__(self, features, num_classes=10, init_weights=True):
         super(VGG, self).__init__()
@@ -17,7 +18,6 @@ class VGG(nn.Module):
         )
         if init_weights:
             self._initialize_weights()
-        
 
     def forward(self, x):
         x = self.features(x)
@@ -25,7 +25,7 @@ class VGG(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
-    
+
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -38,7 +38,6 @@ class VGG(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)
                 nn.init.constant_(m.bias, 0)
-
 
 def make_layers(batch_norm=False):
     layers = []
@@ -59,4 +58,21 @@ def make_layers(batch_norm=False):
                 conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
                 layers += [conv2d, nn.ReLU(inplace=True)]
                 in_channels = v
+    return nn.Sequential(*layers)
+
+def make_layers_BN(batch_norm=False):
+    layers = []
+    in_channels = 3
+    cfg = [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M']
+
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v
     return nn.Sequential(*layers)
